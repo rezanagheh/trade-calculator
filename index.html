@@ -199,30 +199,10 @@ function loadChart(){
         اگر TradingView تا ۲ ثانیه آماده نشد،
         دوباره تلاش می‌کنیم.
       */
-      chartRetryTimer=setTimeout(()=>{
-
-        if(!chartReady){
-
-          console.log('TradingView هنوز آماده نشده؛ تلاش مجدد...');
-
-          try{
-            if(state.chart && typeof state.chart.remove==='function'){
-              state.chart.remove();
-            }
-          }catch(e){}
-
-          state.chart=null;
-
-          tryLoadChart();
-        }
-
-      },2000);
-
     }catch(e){
 
-      console.warn('TradingView load failed, retrying...',e);
+      console.warn('TradingView load failed:',e);
 
-      chartRetryTimer=setTimeout(tryLoadChart,2000);
     }
   }
 
