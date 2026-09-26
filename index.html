@@ -1,70 +1,156 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>LBank Futures Calculator</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>LBank Trading Calculator Pro</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#0a0f1a;color:#e8edf7;font-family:Tahoma,Arial,sans-serif}.wrap{max-width:1400px;margin:auto;padding:14px}.top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}.brand{font-size:19px;font-weight:800}.status{font-size:11px;color:#8795ad;margin-top:3px}.btn{border:1px solid #273650;background:#131e32;color:#dce6f5;border-radius:9px;padding:9px 11px;cursor:pointer}.btn:hover{background:#1a2942}.layout{display:grid;grid-template-columns:290px 1fr;gap:12px}.card{background:#101827;border:1px solid #1d2a40;border-radius:12px;padding:12px}.side-search{display:flex;gap:6px}.side-search input{flex:1}.tabs{display:flex;gap:6px;margin:8px 0}.tabs button{flex:1}.active{background:#29466e!important}.list{height:calc(100vh - 210px);min-height:300px;overflow:auto}.coin{display:flex;align-items:center;gap:6px;padding:7px;border-radius:8px;cursor:pointer}.coin:hover,.coin.sel{background:#18253b}.coin .sym{font-size:12px;font-weight:700;flex:1}.coin .price{font-size:10px;color:#8795ad}.star{padding:3px 6px}.main{min-width:0}.market{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}.pill{flex:1;min-width:130px;background:#0c1422;border:1px solid #1d2a40;border-radius:9px;padding:8px}.pill span{display:block;color:#7f8da5;font-size:10px}.pill b{display:block;margin-top:3px;font-size:13px;direction:ltr;text-align:right}.charthead{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:7px}.charthead strong{margin-left:4px}.tf{display:flex;gap:4px;flex-wrap:wrap}.tf button{font-size:11px;padding:6px 8px}.chartbox{background:#0c1320;border:1px solid #1d2a40;border-radius:10px;padding:7px}.chart{height:440px;position:relative;overflow:hidden;border-radius:7px;background:#0b1220}.chart:fullscreen{height:100%;width:100%;border-radius:0}.chart:fullscreen #tvChart{height:100%;width:100%}.chart iframe{width:100%;height:100%;border:0}.chart-actions{display:flex;gap:6px;justify-content:flex-start;flex-wrap:wrap;margin-top:7px}.chart-actions a{display:inline-flex;align-items:center;text-decoration:none}.chart-note{font-size:10px;color:#77859d;margin-top:6px;line-height:1.7}.calc{margin-top:12px}.calc-head{display:flex;justify-content:space-between;align-items:center;gap:8px}.calc-head h3{margin:0;font-size:15px}.hint{font-size:10px;color:#7f8da5;margin-top:3px}.trade-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:9px}.field label{display:block;font-size:10px;color:#8d9ab0;margin:0 0 4px}.field input,.field select{width:100%;padding:9px;border:1px solid #273650;background:#0b1321;color:#edf2f9;border-radius:8px;outline:none}.direction{display:flex;gap:5px}.direction button{flex:1}.risk-row{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:7px}.results{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;margin-top:10px}.metric{background:#0c1422;border:1px solid #1d2a40;border-radius:9px;padding:8px;min-width:0}.metric small{display:block;color:#7e8ca3;font-size:9px}.metric b{display:block;margin-top:4px;font-size:12px;direction:ltr;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.metric.primary{border-color:#31557f}.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:8px}.quick button{font-size:11px}.fees{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}.advanced{margin-top:8px}.advanced summary{cursor:pointer;color:#91a0b8;font-size:11px}.advanced-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:7px}.warning{font-size:10px;color:#8d9ab0;line-height:1.7;margin-top:8px}.good{color:#58d49b}.bad{color:#ff7485}@media(max-width:1050px){.layout{grid-template-columns:1fr}.list{height:240px}.results{grid-template-columns:repeat(3,1fr)}}@media(max-width:700px){.wrap{padding:8px}.trade-grid{grid-template-columns:1fr 1fr}.results{grid-template-columns:1fr 1fr}.quick{grid-template-columns:1fr 1fr}.advanced-grid{grid-template-columns:1fr 1fr}.chart{height:340px}.brand{font-size:16px}}@media(max-width:430px){.trade-grid,.risk-row,.fees,.advanced-grid{grid-template-columns:1fr}.chart{height:290px}}
+*{box-sizing:border-box}:root{--bg:#080d19;--card:#11192b;--card2:#0c1322;--border:#263451;--text:#eef2ff;--muted:#94a2bf;--blue:#5b70ff;--green:#20c997;--red:#ff5f7a;--yellow:#ffd166}
+body{margin:0;background:linear-gradient(180deg,#080d19,#0a1020);color:var(--text);font-family:Tahoma,Arial,sans-serif;min-height:100vh}.wrap{max-width:1200px;margin:auto;padding:18px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.brand{font-size:22px;font-weight:800}.sub{font-size:12px;color:var(--muted);margin-top:4px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.card{background:rgba(17,25,43,.96);border:1px solid var(--border);border-radius:14px;padding:14px;box-shadow:0 8px 30px rgba(0,0,0,.18)}.full{grid-column:1/-1}.title{font-size:14px;font-weight:800;margin-bottom:12px}.muted{color:var(--muted)}.controls{display:flex;gap:8px;flex-wrap:wrap}.input,.select{width:100%;height:40px;background:#0a1120;color:var(--text);border:1px solid var(--border);border-radius:9px;padding:0 10px;outline:none}.input:focus,.select:focus{border-color:var(--blue)}button{border:0;border-radius:9px;padding:9px 12px;background:#1a2540;color:var(--text);cursor:pointer;font-weight:700}button:hover{filter:brightness(1.15)}.blue{background:var(--blue)}.green{background:#116b54}.red{background:#762b3c}.yellow{background:#735c18}.searchrow{display:grid;grid-template-columns:1fr auto auto;gap:8px;margin-bottom:10px}.market-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-height:250px;overflow:auto}.market{background:#0b1322;border:1px solid var(--border);border-radius:10px;padding:9px;cursor:pointer;position:relative}.market:hover,.market.active{border-color:var(--blue)}.market .name{font-weight:800;font-size:12px}.market .price{font-size:14px;margin-top:5px}.market .star{position:absolute;left:7px;top:6px;color:#65728e}.market .star.on{color:var(--yellow)}.live-note{margin-top:8px;font-size:11px;color:var(--muted)}.chart-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:9px;flex-wrap:wrap}.tf{display:flex;gap:5px;flex-wrap:wrap}.tf button{padding:6px 9px;font-size:11px}.tf button.active{background:var(--blue)}.chart-wrap{height:560px;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#0b1120;position:relative}.chart{width:100%;height:100%}.fs{position:absolute;top:8px;left:8px;z-index:4;background:rgba(17,25,43,.88);padding:7px 9px;font-size:12px}.formgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.field label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px}.direction{display:flex;gap:7px}.direction button{flex:1}.direction .selected-long{background:var(--green)}.direction .selected-short{background:var(--red)}.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.feegrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.fee-line{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1b2740;font-size:12px}.results{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.metric{background:var(--card2);border:1px solid #1c2943;border-radius:10px;padding:10px}.metric .k{font-size:10px;color:var(--muted)}.metric .v{font-size:16px;font-weight:800;margin-top:4px;word-break:break-word}.profit{border-color:#185d4d}.loss{border-color:#693041}.be{display:grid;grid-template-columns:1fr 1fr;gap:10px}.notice{padding:10px;border-radius:9px;background:#0b1322;color:var(--muted);font-size:12px;line-height:1.8}.ok{color:var(--green)}.bad{color:var(--red)}.warn{color:var(--yellow)}.footer{text-align:center;color:#687692;font-size:10px;margin-top:14px}.small{font-size:11px}.hidden{display:none!important}
+@media(max-width:900px){.grid{grid-template-columns:1fr}.full{grid-column:auto}.market-grid{grid-template-columns:repeat(3,1fr)}.chart-wrap{height:500px}.formgrid{grid-template-columns:1fr 1fr}.results{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.wrap{padding:10px}.top{align-items:flex-start}.brand{font-size:18px}.market-grid{grid-template-columns:repeat(2,1fr)}.searchrow{grid-template-columns:1fr 1fr}.searchrow .input{grid-column:1/-1}.formgrid,.feegrid,.row2,.be,.results{grid-template-columns:1fr}.chart-wrap{height:430px}}
 </style>
 </head>
-<body><div class="wrap">
-<div class="top"><div><div class="brand">LBank Futures Calculator</div><div class="status" id="status">در حال دریافت بازار...</div></div><button class="btn" id="refresh">↻</button></div>
-<div class="layout">
-<aside class="card"><b style="font-size:13px">Futures</b><div class="side-search" style="margin-top:8px"><input id="search" placeholder="BTC / XRP ..."><button class="btn" id="favOnly">★</button></div><div class="tabs"><button class="btn active" data-tab="all">همه</button><button class="btn" data-tab="fav">فیوِریت</button></div><div class="list" id="coinList"></div></aside>
-<main class="main">
-<section class="card">
-<div class="market"><div class="pill"><span>Coin / Last</span><b id="livePrice">—</b></div><div class="pill"><span>Mark</span><b id="markPrice">—</b></div><div class="pill"><span>Funding</span><b id="funding">—</b></div></div>
-<div class="charthead"><strong>Chart</strong><div class="tf" id="tf"><button class="btn" data-tf="1m">1m</button><button class="btn" data-tf="5m">5m</button><button class="btn active" data-tf="15m">15m</button><button class="btn" data-tf="30m">30m</button><button class="btn" data-tf="1h">1h</button><button class="btn" data-tf="4h">4h</button><button class="btn" data-tf="1d">1D</button></div></div>
-<div class="chartbox"><div class="chart" id="chartContainer"><div id="tvChart" style="width:100%;height:100%"></div></div><div class="chart-actions"><button class="btn" id="chartFullscreen">⛶ تمام‌صفحه</button><a class="btn" id="openTradingView" target="_blank" rel="noopener">↗ باز کردن TradingView</a></div><div class="chart-note">ابزارهای رسم داخل همین نمودار فعال‌اند. برای گذاشتن Entry / Stop / Target از ابزار <b>Long Position / Short Position</b> استفاده کن و نقاط را مستقیم روی چارت جابه‌جا کن.</div></div>
-</section>
-<section class="card calc">
-<div class="calc-head"><div><h3>محاسبه معامله</h3><div class="hint">فقط Entry + SL + ریسک را وارد کن؛ بقیه خودش حساب می‌شود.</div></div><button class="btn" id="resetCalc">ریست</button></div>
-<div class="trade-grid">
-<div class="field"><label>Coin</label><input id="symbol" value="XRPUSDT"></div>
-<div class="field"><label>Balance</label><input id="balance" type="number" value="100" step="any"></div>
-<div class="field"><label>Direction</label><div class="direction"><button class="btn active" id="long">LONG</button><button class="btn" id="short">SHORT</button></div></div>
-<div class="field"><label>Leverage</label><input id="lev" type="number" value="9" min="1" step="any"></div>
-<div class="field"><label>Entry</label><input id="entry" type="number" value="1.5835" step="any"></div>
-<div class="field"><label>Stop Loss</label><input id="sl" type="number" value="1.6205" step="any"></div>
-<div class="field"><label>Take Profit</label><input id="tp" type="number" value="1.5651" step="any"></div>
-<div class="field"><label>R:R</label><input id="rrInput" type="number" value="2" min="0.01" step="0.1"></div>
-</div>
-<div class="risk-row"><div class="field"><label>Risk %</label><input id="riskPct" type="number" value="1" min="0" step="any"></div><div class="field"><label>Risk $</label><input id="riskDollar" type="number" value="5" min="0" step="any"></div></div>
-<div class="quick"><button class="btn" id="tpFromRR">TP ← R:R</button><button class="btn" id="riskFromPct">Risk $ ← %</button><button class="btn" id="riskFromDollar">Risk % ← $</button><button class="btn" id="useLast">Entry ← Last</button></div>
-<div class="results" id="results"></div>
-<details class="advanced"><summary>کارمزد و تنظیمات بیشتر</summary><div class="advanced-grid"><div class="field"><label>Entry Fee</label><select id="entryType"><option value="taker">Taker 0.06%</option><option value="maker">Maker 0.02%</option></select></div><div class="field"><label>Exit Fee</label><select id="exitType"><option value="taker">Taker 0.06%</option><option value="maker">Maker 0.02%</option></select></div><div class="field"><label>Taker Fee %</label><input id="takerFee" type="number" value="0.06" step="any"></div><div class="field"><label>Maker Fee %</label><input id="makerFee" type="number" value="0.02" step="any"></div></div></details>
-<div class="warning">Position Size بر اساس Risk یعنی حجم را طوری تعیین می‌کند که زیان رسیدن به SL با احتساب کارمزدها نزدیک ریسک انتخابی باشد. Margin موردنیاز از Position Size ÷ Leverage محاسبه می‌شود.</div>
-</section></main></div></div>
-<script>
-const $=id=>document.getElementById(id);let instruments=[],markets=new Map(),selected='XRPUSDT',direction='long',tab='all',favs=new Set(JSON.parse(localStorage.getItem('lbank_favorites')||'[]')),currentTf='15m';let tvWidget=null;
-const fmt=(n,d=6)=>Number.isFinite(n)?n.toLocaleString('en-US',{maximumFractionDigits:d}):'—';
-async function api(path){const r=await fetch(path);const j=await r.json();if(!r.ok||j.success===false)throw Error(j.error||'API error');return j.data??j}
-function saveFav(){localStorage.setItem('lbank_favorites',JSON.stringify([...favs]))}
-function fee(type){return (Number($(type==='taker'?'takerFee':'makerFee').value)||0)/100}
-function renderList(){const q=$('search').value.trim().toUpperCase();let arr=instruments.filter(x=>(tab!=='fav'||favs.has(x.symbol))&&(!q||x.symbol.toUpperCase().includes(q)||String(x.symbolName||'').toUpperCase().includes(q)));$('coinList').innerHTML=arr.slice(0,800).map(x=>{const m=markets.get(x.symbol)||{};return `<div class="coin ${x.symbol===selected?'sel':''}" data-s="${x.symbol}"><button class="btn star" data-f="${x.symbol}">${favs.has(x.symbol)?'★':'☆'}</button><div class="sym">${x.symbol}</div><div class="price">${fmt(Number(m.lastPrice),8)}</div></div>`}).join('')||'<div class="warning">موردی پیدا نشد.</div>';document.querySelectorAll('.coin').forEach(e=>e.onclick=ev=>{if(ev.target.dataset.f){const s=ev.target.dataset.f;favs.has(s)?favs.delete(s):favs.add(s);saveFav();renderList();return}selectSymbol(e.dataset.s)})}
-function updateChart(){
-  const map={'1m':'1','5m':'5','15m':'15','30m':'30','1h':'60','4h':'240','1d':'D'};
-  const box=$('tvChart');box.innerHTML='';
-  const script=document.createElement('script');
-  script.type='text/javascript';script.src='https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';script.async=true;
-  const cfg={autosize:true,symbol:'LBANK:'+selected+'.P',interval:map[currentTf]||'15',timezone:'Etc/UTC',theme:'dark',style:'1',withdateranges:true,hide_side_toolbar:false,hide_top_toolbar:false,hide_legend:false,hide_volume:false,allow_symbol_change:false,save_image:true,show_popup_button:true,popup_width:'1000',popup_height:'650',calendar:false,hotlist:false,locale:'en',studies:[],support_host:'https://www.tradingview.com'};
-  script.innerHTML=JSON.stringify(cfg);box.appendChild(script);
-  $('openTradingView').href='https://www.tradingview.com/symbols/'+encodeURIComponent(selected+'.P')+'/?exchange=LBANK';
-}
-function selectSymbol(s){selected=s;$('symbol').value=s;const m=markets.get(s)||{};if(m.lastPrice)$('entry').value=m.lastPrice;$('livePrice').textContent=fmt(Number(m.lastPrice),10);$('markPrice').textContent=fmt(Number(m.markedPrice),10);$('funding').textContent=m.prePositionFeeRate?fmt(Number(m.prePositionFeeRate)*100,5)+'%':'—';renderList();updateChart();calc()}
-function setDirection(d){direction=d;$('long').classList.toggle('active',d==='long');$('short').classList.toggle('active',d==='short');calc()}
-function calc(){const entry=Number($('entry').value),sl=Number($('sl').value),tp=Number($('tp').value),lev=Number($('lev').value),bal=Number($('balance').value),riskPct=Number($('riskPct').value)/100,riskDollar=Number($('riskDollar').value);if(!(entry>0&&sl>0&&tp>0&&lev>0&&bal>=0))return;const er=fee($('entryType').value),xr=fee($('exitType').value),dist=Math.abs(sl-entry)/entry,slExit=(Math.abs(sl)/entry)*xr,den=dist+er+slExit;const risk$=riskDollar>0?riskDollar:bal*riskPct;const position=den>0?risk$/den:0;const qty=position/entry;const margin=position/lev;const grossTP=direction==='long'?qty*(tp-entry):qty*(entry-tp);const grossSL=direction==='long'?qty*(sl-entry):qty*(entry-sl);const entryFee=position*er,tpFee=Math.abs(qty*tp)*xr,slFee=Math.abs(qty*sl)*xr;const netTP=grossTP-entryFee-tpFee,netSL=grossSL-entryFee-slFee;const be=direction==='long'?entry*(1+er)/(1-xr):entry*(1-er)/(1+xr);const rr=Math.abs((tp-entry)/(sl-entry));const actualRiskPct=bal?Math.abs(netSL)/bal*100:0;const items=[['Position Size',fmt(position,4)+' USDT',1],['Margin',fmt(margin,4)+' USDT',1],['Quantity',fmt(qty,8),0],['TP Net',fmt(netTP,4)+' USDT',0],['SL Net',fmt(netSL,4)+' USDT',0],['Fees @TP',fmt(entryFee+tpFee,5)+' USDT',0],['R:R',fmt(rr,2),0],['Break-even',fmt(be,10),0],['Risk',fmt(Math.abs(netSL),4)+' USDT',0],['Risk %',fmt(actualRiskPct,2)+'%',0]];$('results').innerHTML=items.map(x=>`<div class="metric ${x[2]?'primary':''}"><small>${x[0]}</small><b class="${x[0]==='SL Net'?'bad':x[0]==='TP Net'?'good':''}">${x[1]}</b></div>`).join('')}
-$('tpFromRR').onclick=()=>{const e=Number($('entry').value),s=Number($('sl').value),rr=Number($('rrInput').value)||1;if(e>0&&s>0){const d=Math.abs(e-s);$('tp').value=direction==='long'?e+d*rr:e-d*rr;calc()}};
-$('riskFromPct').onclick=()=>{$('riskDollar').value=(Number($('balance').value)||0)*(Number($('riskPct').value)||0)/100;calc()};
-$('riskFromDollar').onclick=()=>{$('riskPct').value=(Number($('balance').value)>0?Number($('riskDollar').value)/Number($('balance').value)*100:0).toFixed(3);calc()};
-$('useLast').onclick=()=>{const p=Number(markets.get(selected)?.lastPrice);if(p){$('entry').value=p;calc()}};
-$('chartFullscreen').onclick=async()=>{const f=$('chartContainer');try{if(document.fullscreenElement)await document.exitFullscreen();else await f.requestFullscreen()}catch{window.open($('openTradingView').href,'_blank','noopener')}};
-$('resetCalc').onclick=()=>{const p=Number(markets.get(selected)?.lastPrice)||0;$('balance').value=100;$('lev').value=9;$('entry').value=p||'';$('sl').value='';$('tp').value='';$('rrInput').value=2;$('riskPct').value=1;$('riskDollar').value=5;$('entryType').value='taker';$('exitType').value='taker';calc()};
-$('search').oninput=renderList;$('refresh').onclick=load;document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;document.querySelectorAll('[data-tab]').forEach(z=>z.classList.remove('active'));b.classList.add('active');renderList()});document.querySelectorAll('#tf button').forEach(b=>b.onclick=()=>{currentTf=b.dataset.tf;document.querySelectorAll('#tf button').forEach(z=>z.classList.remove('active'));b.classList.add('active');updateChart()});$('long').onclick=()=>setDirection('long');$('short').onclick=()=>setDirection('short');document.querySelectorAll('input,select').forEach(e=>e.addEventListener('input',calc));
+<body>
+<div class="wrap">
+  <div class="top"><div><div class="brand">LBank Trading Calculator Pro</div><div class="sub">Futures • Risk • Fees • R:R • Break-even</div></div><div id="status" class="small muted">در حال اتصال...</div></div>
+  <div class="grid">
+    <section class="card full">
+      <div class="title">🔥 قیمت زنده — LBank Futures</div>
+      <div class="searchrow"><input id="search" class="input" placeholder="جستجوی BTCUSDT، XRPUSDT و ..."><button id="refresh" class="blue">↻ بروزرسانی</button><button id="favOnly">★ علاقه‌مندی</button></div>
+      <div id="markets" class="market-grid"></div>
+      <div id="liveNote" class="live-note">—</div>
+    </section>
 
-function freshForm(){['symbol','balance','lev','entry','sl','tp','rrInput','riskPct','riskDollar','takerFee','makerFee'].forEach(id=>{const el=$(id);if(el)el.setAttribute('autocomplete','off')});$('sl').value='';$('tp').value='';$('riskDollar').value=5;}
-window.addEventListener('pageshow',()=>{freshForm();});
-freshForm();
-async function load(){try{const [ins,mar]=await Promise.all([api('/api/instruments'),api('/api/markets')]);instruments=Array.isArray(ins)?ins:[];markets=new Map((Array.isArray(mar)?mar:[]).map(x=>[x.symbol,x]));$('status').textContent=`${instruments.length.toLocaleString()} قرارداد • ${new Date().toLocaleTimeString('fa-IR')}`;const exists=instruments.some(x=>x.symbol===selected);selectSymbol(exists?selected:(instruments[0]?.symbol||'BTCUSDT'))}catch(e){$('status').textContent='خطا: '+e.message}}
-load();setInterval(async()=>{try{const mar=await api('/api/markets');markets=new Map((Array.isArray(mar)?mar:[]).map(x=>[x.symbol,x]));const m=markets.get(selected)||{};$('livePrice').textContent=fmt(Number(m.lastPrice),10);$('markPrice').textContent=fmt(Number(m.markedPrice),10);$('funding').textContent=m.prePositionFeeRate?fmt(Number(m.prePositionFeeRate)*100,5)+'%':'—';renderList();calc()}catch{}},5000);
-</script></body></html>
+    <section class="card full">
+      <div class="chart-head"><div><div class="title" style="margin:0">📈 نمودار</div><div class="small muted" id="chartSymbol">—</div></div><div class="tf" id="tfs"></div></div>
+      <div id="chartBox" class="chart-wrap"><button id="fullscreen" class="fs">⛶ تمام‌صفحه</button><div id="tvChart" class="chart"></div></div>
+      <div class="live-note">ابزارهای Drawing خود TradingView داخل نمودار فعال هستند؛ برای Entry / SL / TP می‌توانی از Long Position یا Short Position استفاده کنی.</div>
+    </section>
+
+    <section class="card">
+      <div class="title">📌 اطلاعات معامله</div>
+      <div class="formgrid">
+        <div class="field"><label>Symbol</label><input id="symbol" class="input" value="BTCUSDT"></div>
+        <div class="field"><label>Balance (USDT)</label><input id="balance" class="input" type="number" step="any" value="100"></div>
+        <div class="field"><label>Entry</label><input id="entry" class="input" type="number" step="any"></div>
+        <div class="field"><label>TP</label><input id="tp" class="input" type="number" step="any"></div>
+        <div class="field"><label>SL</label><input id="sl" class="input" type="number" step="any"></div>
+        <div class="field"><label>Leverage</label><input id="leverage" class="input" type="number" step="any" min="1" value="10"></div>
+        <div class="field"><label>Risk %</label><input id="riskPct" class="input" type="number" step="any" min="0" value="2"></div>
+        <div class="field"><label>Max Risk $</label><input id="riskDollar" class="input" type="number" step="any" min="0" placeholder="اختیاری"></div>
+        <div class="field"><label>Margin (اختیاری)</label><input id="marginInput" class="input" type="number" step="any" min="0" placeholder="اگر وارد شود، Position Size از آن می‌آید"></div>
+      </div>
+      <div class="row2"><div><label class="small muted">جهت معامله</label><div class="direction"><button id="longBtn" class="selected-long">LONG</button><button id="shortBtn">SHORT</button></div></div><div><label class="small muted">عملیات</label><div class="controls"><button id="reset" class="red">پاک کردن</button><button id="calc" class="blue">محاسبه</button></div></div></div>
+    </section>
+
+    <section class="card">
+      <div class="title">💰 کارمزد LBank</div>
+      <div class="feegrid">
+        <div class="field"><label>Entry Type</label><select id="entryType" class="select"><option value="taker">Taker</option><option value="maker">Maker</option></select></div>
+        <div class="field"><label>Exit Type</label><select id="exitType" class="select"><option value="taker">Taker</option><option value="maker">Maker</option></select></div>
+        <div class="field"><label>Taker Fee %</label><input id="takerFee" class="input" type="number" step="0.001" value="0.06"></div>
+        <div class="field"><label>Maker Fee %</label><input id="makerFee" class="input" type="number" step="0.001" value="0.02"></div>
+      </div>
+      <div class="fee-line"><span>Entry fee rate</span><b id="entryRate">0.0600%</b></div>
+      <div class="fee-line"><span>Exit fee rate</span><b id="exitRate">0.0600%</b></div>
+      <div class="fee-line"><span>Position Size by risk</span><b id="riskPosition">—</b></div>
+      <div class="notice" style="margin-top:9px">Position Size بر اساس فاصله Entry تا SL و Risk محاسبه می‌شود. کارمزد ورود و خروج جداگانه از سود/ضرر کم می‌شوند.</div>
+    </section>
+
+    <section class="card full">
+      <div class="title">📊 نتیجه معامله</div>
+      <div class="results">
+        <div class="metric"><div class="k">Position Size</div><div id="position" class="v">—</div></div>
+        <div class="metric"><div class="k">Margin</div><div id="margin" class="v">—</div></div>
+        <div class="metric"><div class="k">Quantity</div><div id="qty" class="v">—</div></div>
+        <div class="metric"><div class="k">TP Distance</div><div id="tpDist" class="v">—</div></div>
+        <div class="metric"><div class="k">SL Distance</div><div id="slDist" class="v">—</div></div>
+        <div class="metric"><div class="k">R / R</div><div id="rr" class="v">—</div></div>
+        <div class="metric"><div class="k">Actual Risk $</div><div id="actualRisk" class="v">—</div></div>
+        <div class="metric"><div class="k">Actual Risk %</div><div id="actualRiskPct" class="v">—</div></div>
+        <div class="metric"><div class="k">Break-even</div><div id="quickBE" class="v">—</div></div>
+      </div>
+    </section>
+
+    <section class="card profit"><div class="title">🟢 اگر TP بخورد</div><div class="results"><div class="metric"><div class="k">Gross profit</div><div id="tpGross" class="v ok">—</div></div><div class="metric"><div class="k">Entry fee</div><div id="tpEntryFee" class="v">—</div></div><div class="metric"><div class="k">Exit fee</div><div id="tpExitFee" class="v">—</div></div><div class="metric"><div class="k">Net profit</div><div id="tpNet" class="v ok">—</div></div><div class="metric"><div class="k">ROI on margin</div><div id="tpROI" class="v">—</div></div></div></section>
+    <section class="card loss"><div class="title">🔴 اگر SL بخورد</div><div class="results"><div class="metric"><div class="k">Gross loss</div><div id="slGross" class="v bad">—</div></div><div class="metric"><div class="k">Entry fee</div><div id="slEntryFee" class="v">—</div></div><div class="metric"><div class="k">Exit fee</div><div id="slExitFee" class="v">—</div></div><div class="metric"><div class="k">Net loss</div><div id="slNet" class="v bad">—</div></div><div class="metric"><div class="k">ROI on margin</div><div id="slROI" class="v">—</div></div></div></section>
+
+    <section class="card full"><div class="title">⚖️ Break-even</div><div class="be"><div class="metric"><div class="k">Break-even price</div><div id="bePrice" class="v">—</div></div><div class="metric"><div class="k">Total fee at BE</div><div id="beFee" class="v">—</div></div></div><div id="message" class="notice" style="margin-top:10px">Entry، TP و SL را وارد کن.</div></section>
+  </div>
+  <div class="footer">LBank Futures calculator • قیمت‌ها از API عمومی LBank دریافت می‌شوند.</div>
+</div>
+<script src="https://s3.tradingview.com/tv.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const state={markets:[],favorites:new Set(JSON.parse(localStorage.getItem('lbank_favorites')||'[]')),symbol:'BTCUSDT',tf:'15',direction:'long',favOnly:false,chart:null};
+const TF=['1','5','15','30','60','240','480','720','D'];
+function n(v){const x=Number(v);return Number.isFinite(x)?x:0}
+function fmt(v,d=4){if(!Number.isFinite(v))return '—';return new Intl.NumberFormat('en-US',{maximumFractionDigits:d}).format(v)}
+function pct(v){return Number.isFinite(v)?fmt(v,4)+'%':'—'}
+function feeRate(type){return (n($(type==='taker'?'takerFee':'makerFee').value)||0)/100}
+function activeFee(id){return feeRate($(id).value)}
+function saveFav(){localStorage.setItem('lbank_favorites',JSON.stringify([...state.favorites]))}
+function renderTF(){ $('tfs').innerHTML=TF.map(x=>`<button class="${x===state.tf?'active':''}" data-tf="${x}">${x==='60'?'1h':x==='240'?'4h':x==='480'?'8h':x==='720'?'12h':x==='D'?'1D':x+'m'}</button>`).join('');document.querySelectorAll('[data-tf]').forEach(b=>b.onclick=()=>{state.tf=b.dataset.tf;renderTF();loadChart()}) }
+function loadChart(){
+ $('chartSymbol').textContent='LBANK:'+state.symbol+'.P';
+ if(!window.TradingView)return;
+ $('tvChart').innerHTML='';
+ state.chart=new TradingView.widget({container_id:'tvChart',autosize:true,symbol:'LBANK:'+state.symbol+'.P',interval:state.tf,timezone:'Etc/UTC',theme:'dark',style:'1',locale:'en',toolbar_bg:'#0b1120',enable_publishing:false,hide_top_toolbar:false,hide_side_toolbar:false,allow_symbol_change:false,save_image:true,withdateranges:true,details:false,hotlist:false,calendar:false,studies:['Volume@tv-basicstudies'],support_host:'https://www.tradingview.com'});
+}
+async function loadMarkets(){
+ $('status').textContent='در حال دریافت قیمت‌ها...';
+ try{const r=await fetch('/api/markets',{cache:'no-store'});if(!r.ok)throw Error('API '+r.status);const data=await r.json();state.markets=Array.isArray(data)?data:(data.data||[]);renderMarkets();$('status').textContent='● آنلاین';$('status').className='small ok';
+ }catch(e){$('status').textContent='API خطا';$('status').className='small bad';$('liveNote').textContent='دریافت قیمت زنده انجام نشد. اگر لوکال اجرا می‌کنی، /api/markets باید توسط Vercel اجرا شود.';renderMarkets()}
+}
+function renderMarkets(){
+ const q=$('search').value.trim().toUpperCase();let arr=state.markets.filter(m=>{const s=String(m.symbol||m.symbolName||'').toUpperCase();return (!q||s.includes(q))&&(!state.favOnly||state.favorites.has(s))});
+ arr.sort((a,b)=>{const sa=String(a.symbol||a.symbolName||'').toUpperCase(),sb=String(b.symbol||b.symbolName||'').toUpperCase();return (state.favorites.has(sb)-state.favorites.has(sa))||sa.localeCompare(sb)});
+ $('markets').innerHTML=arr.slice(0,200).map(m=>{const s=String(m.symbol||m.symbolName||'').toUpperCase();const p=n(m.lastPrice||m.markedPrice||m.price);return `<div class="market ${s===state.symbol?'active':''}" data-symbol="${s}"><span class="star ${state.favorites.has(s)?'on':''}" data-star="${s}">★</span><div class="name">${s}</div><div class="price">${fmt(p,8)}</div></div>`}).join('')||'<div class="muted small">موردی پیدا نشد.</div>';
+ document.querySelectorAll('.market').forEach(el=>el.onclick=e=>{if(e.target.dataset.star)return;selectSymbol(el.dataset.symbol)});
+ document.querySelectorAll('[data-star]').forEach(el=>el.onclick=e=>{e.stopPropagation();const s=el.dataset.star;state.favorites.has(s)?state.favorites.delete(s):state.favorites.add(s);saveFav();renderMarkets()});
+ const m=state.markets.find(x=>String(x.symbol||x.symbolName||'').toUpperCase()===state.symbol);if(m)$('liveNote').textContent=`${state.symbol} • Last: ${fmt(n(m.lastPrice||m.markedPrice),8)} • Mark: ${fmt(n(m.markedPrice||m.lastPrice),8)}`;
+}
+function selectSymbol(s){state.symbol=s;$('symbol').value=s;const m=state.markets.find(x=>String(x.symbol||x.symbolName||'').toUpperCase()===s);const p=n(m?.lastPrice||m?.markedPrice);$('entry').value=p||'';$('tp').value='';$('sl').value='';renderMarkets();loadChart();calculate()}
+function getPosition(){
+ const bal=n($('balance').value), riskPct=n($('riskPct').value), maxRisk=n($('riskDollar').value), entry=n($('entry').value), sl=n($('sl').value), lev=Math.max(n($('leverage').value),1), er=activeFee('entryType'), xr=activeFee('exitType');
+ if(!entry||!sl||entry<=0)return {position:0,bal,risk:0,lev,er,xr};
+ const risk= maxRisk>0?maxRisk:bal*riskPct/100;
+ const distance=Math.abs(entry-sl);const effectiveRiskPerUnit=state.direction==='long'?Math.max(entry-sl,0):Math.max(sl-entry,0);
+ const position=effectiveRiskPerUnit>0?risk*entry/effectiveRiskPerUnit:0;
+ return {position,bal,risk,lev,er,xr};
+}
+function calculate(){
+ const entry=n($('entry').value),tp=n($('tp').value),sl=n($('sl').value),lev=Math.max(n($('leverage').value),1),bal=n($('balance').value),riskPct=n($('riskPct').value),manualRisk=n($('riskDollar').value),marginManual=n($('marginInput').value),er=activeFee('entryType'),xr=activeFee('exitType');
+ $('entryRate').textContent=pct(er*100);$('exitRate').textContent=pct(xr*100);
+ if(!entry||!sl||entry<=0){$('message').textContent='Entry و SL را وارد کن تا Position Size بر اساس Risk محاسبه شود.';return}
+ let targetRisk=manualRisk>0?manualRisk:bal*riskPct/100;
+ let pos;
+ if(marginManual>0)pos=marginManual*lev;else{const d=state.direction==='long'?entry-sl:sl-entry;pos=d>0?targetRisk*entry/d:0}
+ const qty=pos/entry,margin=pos/lev;
+ const tpD=state.direction==='long'?tp-entry:entry-tp,slD=state.direction==='long'?entry-sl:sl-entry,rr=slD>0&&tpD>0?tpD/slD:NaN;
+ const tpExitNotional=tp>0?qty*tp:NaN,slExitNotional=sl>0?qty*sl:NaN,entryFee=pos*er;
+ const tpGross=tp>0?(state.direction==='long'?qty*(tp-entry):qty*(entry-tp)):NaN;
+ const slGross=sl>0?(state.direction==='long'?qty*(sl-entry):qty*(entry-sl)):NaN;
+ const tpExitFee=Number.isFinite(tpExitNotional)?tpExitNotional*xr:NaN,slExitFee=Number.isFinite(slExitNotional)?slExitNotional*xr:NaN;
+ const tpNet=tpGross-entryFee-tpExitFee,slNet=slGross-entryFee-slExitFee;
+ const be=state.direction==='long'?entry*(1+er)/(1-xr):entry*(1-er)/(1+xr);
+ const beExit=qty*be,beTotalFee=entryFee+beExit*xr;
+ const actualRisk=Math.abs(slGross)+entryFee+(slExitFee||0),actualRiskPct=bal?actualRisk/bal*100:NaN;
+ $('position').textContent=fmt(pos,4)+' USDT';$('margin').textContent=fmt(margin,4)+' USDT';$('qty').textContent=fmt(qty,8);$('tpDist').textContent=Number.isFinite(tpD)?fmt(tpD,8):'—';$('slDist').textContent=Number.isFinite(slD)?fmt(slD,8):'—';$('rr').textContent=Number.isFinite(rr)?'1 : '+fmt(rr,2):'—';$('riskPosition').textContent=fmt(pos,4)+' USDT';$('actualRisk').textContent=fmt(actualRisk,4)+' USDT';$('actualRiskPct').textContent=pct(actualRiskPct);
+ $('tpGross').textContent=Number.isFinite(tpGross)?fmt(tpGross,4)+' USDT':'—';$('tpEntryFee').textContent=fmt(entryFee,4)+' USDT';$('tpExitFee').textContent=Number.isFinite(tpExitFee)?fmt(tpExitFee,4)+' USDT':'—';$('tpNet').textContent=Number.isFinite(tpNet)?fmt(tpNet,4)+' USDT':'—';$('tpROI').textContent=Number.isFinite(tpNet)&&margin?fmt(tpNet/margin*100,2)+'%':'—';
+ $('slGross').textContent=Number.isFinite(slGross)?fmt(slGross,4)+' USDT':'—';$('slEntryFee').textContent=fmt(entryFee,4)+' USDT';$('slExitFee').textContent=Number.isFinite(slExitFee)?fmt(slExitFee,4)+' USDT':'—';$('slNet').textContent=Number.isFinite(slNet)?fmt(slNet,4)+' USDT':'—';$('slROI').textContent=Number.isFinite(slNet)&&margin?fmt(slNet/margin*100,2)+'%':'—';
+ $('bePrice').textContent=fmt(be,8);$('quickBE').textContent=fmt(be,8);$('beFee').textContent=fmt(beTotalFee,4)+' USDT';
+ $('message').innerHTML=state.direction==='long'?`LONG: اگر SL روی ${fmt(sl,8)} باشد، ریسک هدف حدود <b>${fmt(targetRisk,4)} USDT</b> است. بعد از کارمزدها Actual Risk حدود <b class="bad">${fmt(actualRisk,4)} USDT</b> می‌شود.`:`SHORT: اگر SL روی ${fmt(sl,8)} باشد، ریسک هدف حدود <b>${fmt(targetRisk,4)} USDT</b> است. بعد از کارمزدها Actual Risk حدود <b class="bad">${fmt(actualRisk,4)} USDT</b> می‌شود.`;
+}
+function reset(){['entry','tp','sl','riskDollar','marginInput'].forEach(id=>$(id).value='');$('balance').value='100';$('leverage').value='10';$('riskPct').value='2';$('symbol').value=state.symbol;calculate()}
+function setDirection(d){state.direction=d;$('longBtn').className=d==='long'?'selected-long':'';$('shortBtn').className=d==='short'?'selected-short':'';calculate()}
+$('search').oninput=renderMarkets;$('refresh').onclick=loadMarkets;$('favOnly').onclick=()=>{state.favOnly=!state.favOnly;$('favOnly').className=state.favOnly?'yellow':'';renderMarkets()};$('calc').onclick=calculate;$('reset').onclick=reset;$('longBtn').onclick=()=>setDirection('long');$('shortBtn').onclick=()=>setDirection('short');$('symbol').onchange=()=>selectSymbol($('symbol').value.trim().toUpperCase());
+['balance','entry','tp','sl','leverage','riskPct','riskDollar','marginInput','takerFee','makerFee','entryType','exitType'].forEach(id=>$(id).addEventListener('input',calculate));
+$('fullscreen').onclick=()=>{const el=$('chartBox');if(document.fullscreenElement)document.exitFullscreen();else el.requestFullscreen?.()};
+window.addEventListener('pageshow',()=>{ $('entry').value='';$('tp').value='';$('sl').value=''; });
+renderTF();loadMarkets();
+setTimeout(()=>{if(state.markets.length===0){$('entry').value=''}},500);
+</script>
+</body>
+</html>
