@@ -80,7 +80,6 @@ body{margin:0;background:linear-gradient(180deg,#080d19,#0a1020);color:var(--tex
   </div>
   <div class="footer">LBank Futures calculator • قیمت‌ها از API عمومی LBank دریافت می‌شوند.</div>
 </div>
-<script src="https://s3.tradingview.com/tv.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 const state={markets:[],favorites:new Set(JSON.parse(localStorage.getItem('lbank_favorites')||'[]')),symbol:'BTCUSDT',tf:'15',direction:'long',favOnly:false,chart:null};
@@ -94,9 +93,42 @@ function saveFav(){localStorage.setItem('lbank_favorites',JSON.stringify([...sta
 function renderTF(){ $('tfs').innerHTML=TF.map(x=>`<button class="${x===state.tf?'active':''}" data-tf="${x}">${x==='60'?'1h':x==='240'?'4h':x==='480'?'8h':x==='720'?'12h':x==='D'?'1D':x+'m'}</button>`).join('');document.querySelectorAll('[data-tf]').forEach(b=>b.onclick=()=>{state.tf=b.dataset.tf;renderTF();loadChart()}) }
 function loadChart(){
  $('chartSymbol').textContent='LBANK:'+state.symbol+'.P';
- if(!window.TradingView)return;
- $('tvChart').innerHTML='';
- state.chart=new TradingView.widget({container_id:'tvChart',autosize:true,symbol:'LBANK:'+state.symbol+'.P',interval:state.tf,timezone:'Etc/UTC',theme:'dark',style:'1',locale:'en',toolbar_bg:'#0b1120',enable_publishing:false,hide_top_toolbar:false,hide_side_toolbar:false,allow_symbol_change:false,save_image:true,withdateranges:true,details:false,hotlist:false,calendar:false,studies:['Volume@tv-basicstudies'],support_host:'https://www.tradingview.com'});
+ const box=$('tvChart');
+ box.innerHTML='';
+ const wrap=document.createElement('div');
+ wrap.className='tradingview-widget-container';
+ wrap.style.width='100%';
+ wrap.style.height='100%';
+ const widget=document.createElement('div');
+ widget.className='tradingview-widget-container__widget';
+ widget.style.width='100%';
+ widget.style.height='100%';
+ wrap.appendChild(widget);
+ const script=document.createElement('script');
+ script.type='text/javascript';
+ script.src='https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+ script.async=true;
+ script.text=JSON.stringify({
+   autosize:true,
+   symbol:'LBANK:'+state.symbol+'.P',
+   interval:state.tf,
+   timezone:'Etc/UTC',
+   theme:'dark',
+   style:'1',
+   locale:'en',
+   allow_symbol_change:false,
+   hide_top_toolbar:false,
+   hide_side_toolbar:false,
+   save_image:true,
+   withdateranges:true,
+   details:false,
+   hotlist:false,
+   calendar:false,
+   studies:['Volume@tv-basicstudies'],
+   support_host:'https://www.tradingview.com'
+ });
+ wrap.appendChild(script);
+ box.appendChild(wrap);
 }
 async function loadMarkets(){
  $('status').textContent='در حال دریافت قیمت‌ها...';
