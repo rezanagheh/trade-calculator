@@ -96,7 +96,47 @@ function loadChart(){
  $('chartSymbol').textContent='LBANK:'+state.symbol+'.P';
  if(!window.TradingView)return;
  $('tvChart').innerHTML='';
- state.chart=new TradingView.widget({container_id:'tvChart',autosize:true,symbol:'LBANK:'+state.symbol+'.P',interval:state.tf,timezone:'Etc/UTC',theme:'dark',style:'1',locale:'en',toolbar_bg:'#0b1120',enable_publishing:false,hide_top_toolbar:false,hide_side_toolbar:false,allow_symbol_change:false,save_image:true,withdateranges:true,details:false,hotlist:false,calendar:false,studies:['Volume@tv-basicstudies'],support_host:'https://www.tradingview.com'});
+function loadChart(){
+  $('chartSymbol').textContent='LBANK:'+state.symbol+'.P';
+
+  if(!window.TradingView){
+    setTimeout(loadChart,1000);
+    return;
+  }
+
+  $('tvChart').innerHTML='';
+
+  try{
+    state.chart=new TradingView.widget({
+      container_id:'tvChart',
+      autosize:true,
+      symbol:'LBANK:'+state.symbol+'.P',
+      interval:state.tf,
+      timezone:'Etc/UTC',
+      theme:'dark',
+      style:'1',
+      locale:'en',
+      toolbar_bg:'#0b1120',
+      enable_publishing:false,
+      hide_top_toolbar:false,
+      hide_side_toolbar:false,
+      allow_symbol_change:false,
+      save_image:true,
+      withdateranges:true,
+      details:false,
+      hotlist:false,
+      calendar:false,
+      studies:['Volume@tv-basicstudies'],
+      support_host:'https://www.tradingview.com'
+    });
+  }catch(e){
+    console.warn('TradingView load failed, retrying...',e);
+
+    setTimeout(()=>{
+      loadChart();
+    },1500);
+  }
+}
 }
 async function loadMarkets(){
  $('status').textContent='در حال دریافت قیمت‌ها...';
