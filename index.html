@@ -67,14 +67,14 @@ body{margin:0;background:linear-gradient(180deg,#080d19,#0a1020);color:var(--tex
         <div class="metric"><div class="k">TP Distance</div><div id="tpDist" class="v">—</div></div>
         <div class="metric"><div class="k">SL Distance</div><div id="slDist" class="v">—</div></div>
         <div class="metric"><div class="k">R / R</div><div id="rr" class="v">—</div></div>
-        <div class="metric"><div class="k">Actual Risk $</div><div id="actualRisk" class="v">—</div></div>
-        <div class="metric"><div class="k">Actual Risk %</div><div id="actualRiskPct" class="v">—</div></div>
+        <div class="metric"><div class="k">Risk Amount</div><div id="riskAmount" class="v">—</div></div>
+        <div class="metric"><div class="k">Risk %</div><div id="riskAmountPct" class="v">—</div></div>
         <div class="metric"><div class="k">Break-even</div><div id="quickBE" class="v">—</div></div>
       </div>
     </section>
 
     <section class="card profit"><div class="title">🟢 اگر TP بخورد</div><div class="results"><div class="metric"><div class="k">Gross profit</div><div id="tpGross" class="v ok">—</div></div><div class="metric"><div class="k">Entry fee</div><div id="tpEntryFee" class="v">—</div></div><div class="metric"><div class="k">Exit fee</div><div id="tpExitFee" class="v">—</div></div><div class="metric"><div class="k">Net profit</div><div id="tpNet" class="v ok">—</div></div><div class="metric"><div class="k">ROI on margin</div><div id="tpROI" class="v">—</div></div></div></section>
-    <section class="card loss"><div class="title">🔴 اگر SL بخورد</div><div class="results"><div class="metric"><div class="k">Gross loss</div><div id="slGross" class="v bad">—</div></div><div class="metric"><div class="k">Entry fee</div><div id="slEntryFee" class="v">—</div></div><div class="metric"><div class="k">Exit fee</div><div id="slExitFee" class="v">—</div></div><div class="metric"><div class="k">Net loss</div><div id="slNet" class="v bad">—</div></div><div class="metric"><div class="k">ROI on margin</div><div id="slROI" class="v">—</div></div></div></section>
+    <section class="card loss"><div class="title">🔴 اگر SL بخورد</div><div class="results"><div class="metric"><div class="k">Risk at SL</div><div id="slGross" class="v bad">—</div></div><div class="metric"><div class="k">Entry fee</div><div id="slEntryFee" class="v">—</div></div><div class="metric"><div class="k">Exit fee</div><div id="slExitFee" class="v">—</div></div><div class="metric"><div class="k">Net loss</div><div id="slNet" class="v bad">—</div></div><div class="metric"><div class="k">ROI on margin</div><div id="slROI" class="v">—</div></div></div></section>
 
     <section class="card full"><div class="title">⚖️ Break-even</div><div class="be"><div class="metric"><div class="k">Break-even price</div><div id="bePrice" class="v">—</div></div><div class="metric"><div class="k">Total fee at BE</div><div id="beFee" class="v">—</div></div></div><div id="message" class="notice" style="margin-top:10px">Entry، TP و SL را وارد کن.</div></section>
   </div>
@@ -123,25 +123,75 @@ function getPosition(){
 function calculate(){
  const entry=n($('entry').value),tp=n($('tp').value),sl=n($('sl').value),lev=Math.max(n($('leverage').value),1),bal=n($('balance').value),riskPct=n($('riskPct').value),manualRisk=n($('riskDollar').value),marginManual=n($('marginInput').value),er=activeFee('entryType'),xr=activeFee('exitType');
  $('entryRate').textContent=pct(er*100);$('exitRate').textContent=pct(xr*100);
- if(!entry||!sl||entry<=0){$('message').textContent='Entry و SL را وارد کن تا Position Size بر اساس Risk محاسبه شود.';return}
- let targetRisk=manualRisk>0?manualRisk:bal*riskPct/100;
+ if(!entry||!sl||entry<=0){$('message').textContent='Entry و SL را وارد کن تا دقیقاً مشخص شود برای ریسک دلاری انتخابی چه Position Size لازم است.';return}
+
+ // Target risk is the TOTAL amount allowed to be lost at SL, including entry + exit fees.
+ const targetRisk=manualRisk>0?manualRisk:bal*riskPct/100;
+ const slMove=state.direction==='long'?entry-sl:sl-entry;
+ if(slMove<=0){$('message').textContent='برای این جهت معامله، SL باید در سمت درست Entry باشد.';return}
+
  let pos;
- if(marginManual>0)pos=marginManual*lev;else{const d=state.direction==='long'?entry-sl:sl-entry;pos=d>0?targetRisk*entry/d:0}
+ if(marginManual>0){
+   pos=marginManual*lev;
+ }else{
+   // Loss at SL = qty*(price move) + entry fee + exit fee
+   // qty = position / entry
+   // Therefore position = targetRisk * entry / (SL move + entry*entryFee + SL*exitFee)
+   const riskPerQty=slMove + entry*er + sl*xr;
+   pos=targetRisk*entry/riskPerQty;
+ }
+
  const qty=pos/entry,margin=pos/lev;
- const tpD=state.direction==='long'?tp-entry:entry-tp,slD=state.direction==='long'?entry-sl:sl-entry,rr=slD>0&&tpD>0?tpD/slD:NaN;
- const tpExitNotional=tp>0?qty*tp:NaN,slExitNotional=sl>0?qty*sl:NaN,entryFee=pos*er;
+ const tpD=state.direction==='long'?tp-entry:entry-tp;
+ const slD=slMove;
+ const rr=slD>0&&tpD>0?tpD/slD:NaN;
+ const tpExitNotional=tp>0?qty*tp:NaN;
+ const slExitNotional=qty*sl;
+ const entryFee=pos*er;
  const tpGross=tp>0?(state.direction==='long'?qty*(tp-entry):qty*(entry-tp)):NaN;
- const slGross=sl>0?(state.direction==='long'?qty*(sl-entry):qty*(entry-sl)):NaN;
- const tpExitFee=Number.isFinite(tpExitNotional)?tpExitNotional*xr:NaN,slExitFee=Number.isFinite(slExitNotional)?slExitNotional*xr:NaN;
- const tpNet=tpGross-entryFee-tpExitFee,slNet=slGross-entryFee-slExitFee;
+ const slGross=qty*slD;
+ const tpExitFee=Number.isFinite(tpExitNotional)?tpExitNotional*xr:NaN;
+ const slExitFee=slExitNotional*xr;
+ const tpNet=tpGross-entryFee-tpExitFee;
+ const slNet=-(slGross+entryFee+slExitFee);
  const be=state.direction==='long'?entry*(1+er)/(1-xr):entry*(1-er)/(1+xr);
  const beExit=qty*be,beTotalFee=entryFee+beExit*xr;
- const actualRisk=Math.abs(slGross)+entryFee+(slExitFee||0),actualRiskPct=bal?actualRisk/bal*100:NaN;
- $('position').textContent=fmt(pos,4)+' USDT';$('margin').textContent=fmt(margin,4)+' USDT';$('qty').textContent=fmt(qty,8);$('tpDist').textContent=Number.isFinite(tpD)?fmt(tpD,8):'—';$('slDist').textContent=Number.isFinite(slD)?fmt(slD,8):'—';$('rr').textContent=Number.isFinite(rr)?'1 : '+fmt(rr,2):'—';$('riskPosition').textContent=fmt(pos,4)+' USDT';$('actualRisk').textContent=fmt(actualRisk,4)+' USDT';$('actualRiskPct').textContent=pct(actualRiskPct);
- $('tpGross').textContent=Number.isFinite(tpGross)?fmt(tpGross,4)+' USDT':'—';$('tpEntryFee').textContent=fmt(entryFee,4)+' USDT';$('tpExitFee').textContent=Number.isFinite(tpExitFee)?fmt(tpExitFee,4)+' USDT':'—';$('tpNet').textContent=Number.isFinite(tpNet)?fmt(tpNet,4)+' USDT':'—';$('tpROI').textContent=Number.isFinite(tpNet)&&margin?fmt(tpNet/margin*100,2)+'%':'—';
- $('slGross').textContent=Number.isFinite(slGross)?fmt(slGross,4)+' USDT':'—';$('slEntryFee').textContent=fmt(entryFee,4)+' USDT';$('slExitFee').textContent=Number.isFinite(slExitFee)?fmt(slExitFee,4)+' USDT':'—';$('slNet').textContent=Number.isFinite(slNet)?fmt(slNet,4)+' USDT':'—';$('slROI').textContent=Number.isFinite(slNet)&&margin?fmt(slNet/margin*100,2)+'%':'—';
- $('bePrice').textContent=fmt(be,8);$('quickBE').textContent=fmt(be,8);$('beFee').textContent=fmt(beTotalFee,4)+' USDT';
- $('message').innerHTML=state.direction==='long'?`LONG: اگر SL روی ${fmt(sl,8)} باشد، ریسک هدف حدود <b>${fmt(targetRisk,4)} USDT</b> است. بعد از کارمزدها Actual Risk حدود <b class="bad">${fmt(actualRisk,4)} USDT</b> می‌شود.`:`SHORT: اگر SL روی ${fmt(sl,8)} باشد، ریسک هدف حدود <b>${fmt(targetRisk,4)} USDT</b> است. بعد از کارمزدها Actual Risk حدود <b class="bad">${fmt(actualRisk,4)} USDT</b> می‌شود.`;
+ const actualRisk=Math.abs(slNet),actualRiskPct=bal?actualRisk/bal*100:NaN;
+
+ $('position').textContent=fmt(pos,4)+' USDT';
+ $('margin').textContent=fmt(margin,4)+' USDT';
+ $('qty').textContent=fmt(qty,8);
+ $('tpDist').textContent=Number.isFinite(tpD)?fmt(tpD,8):'—';
+ $('slDist').textContent=fmt(slD,8);
+ $('rr').textContent=Number.isFinite(rr)?'1 : '+fmt(rr,2):'—';
+ $('riskPosition').textContent=fmt(pos,4)+' USDT';
+ $('riskAmount').textContent=fmt(actualRisk,4)+' USDT';
+ $('riskAmountPct').textContent=pct(actualRiskPct);
+
+ $('tpGross').textContent=Number.isFinite(tpGross)?fmt(tpGross,4)+' USDT':'—';
+ $('tpEntryFee').textContent=fmt(entryFee,4)+' USDT';
+ $('tpExitFee').textContent=Number.isFinite(tpExitFee)?fmt(tpExitFee,4)+' USDT':'—';
+ $('tpNet').textContent=Number.isFinite(tpNet)?fmt(tpNet,4)+' USDT':'—';
+ $('tpROI').textContent=Number.isFinite(tpNet)&&margin?fmt(tpNet/margin*100,2)+'%':'—';
+
+ $('slGross').textContent=fmt(slGross,4)+' USDT';
+ $('slEntryFee').textContent=fmt(entryFee,4)+' USDT';
+ $('slExitFee').textContent=fmt(slExitFee,4)+' USDT';
+ $('slNet').textContent=fmt(slNet,4)+' USDT';
+ $('slROI').textContent=margin?fmt(slNet/margin*100,2)+'%':'—';
+
+ $('bePrice').textContent=fmt(be,8);
+ $('quickBE').textContent=fmt(be,8);
+ $('beFee').textContent=fmt(beTotalFee,4)+' USDT';
+
+ const feeText=fmt(entryFee+slExitFee,4);
+ if(marginManual>0){
+   $('message').innerHTML=state.direction==='long'
+    ?`با Margin دستی، Position Size برابر <b>${fmt(pos,4)} USDT</b> است؛ اگر SL روی <b>${fmt(sl,8)}</b> بخورد، ضرر واقعی با کارمزد حدود <b class="bad">${fmt(actualRisk,4)} USDT</b> می‌شود.`
+    :`با Margin دستی، Position Size برابر <b>${fmt(pos,4)} USDT</b> است؛ اگر SL روی <b>${fmt(sl,8)}</b> بخورد، ضرر واقعی با کارمزد حدود <b class="bad">${fmt(actualRisk,4)} USDT</b> می‌شود.`;
+ }else{
+   $('message').innerHTML=`برای اینکه اگر SL روی <b>${fmt(sl,8)}</b> بخورد، حداکثر حدود <b>${fmt(targetRisk,4)} USDT</b> ضرر کنی، Position Size باید حدود <b>${fmt(pos,4)} USDT</b> باشد. این مقدار <b>کارمزد ورود و خروج را هم داخل ریسک حساب کرده</b>؛ کارمزد کل در SL حدود ${feeText} USDT است.`;
+ }
 }
 function reset(){['entry','tp','sl','riskDollar','marginInput'].forEach(id=>$(id).value='');$('balance').value='100';$('leverage').value='10';$('riskPct').value='2';$('symbol').value=state.symbol;calculate()}
 function setDirection(d){state.direction=d;$('longBtn').className=d==='long'?'selected-long':'';$('shortBtn').className=d==='short'?'selected-short':'';calculate()}
