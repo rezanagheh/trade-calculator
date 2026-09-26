@@ -80,160 +80,542 @@ body{margin:0;background:linear-gradient(180deg,#080d19,#0a1020);color:var(--tex
   </div>
   <div class="footer">LBank Futures calculator • قیمت‌ها از API عمومی LBank دریافت می‌شوند.</div>
 </div>
+
 <script src="https://s3.tradingview.com/tv.js"></script>
+
 <script>
 const $=id=>document.getElementById(id);
 const state={markets:[],favorites:new Set(JSON.parse(localStorage.getItem('lbank_favorites')||'[]')),symbol:'BTCUSDT',tf:'15',direction:'long',favOnly:false,chart:null};
 const TF=['1','5','15','30','60','240','480','720','D'];
+
+let chartRetryTimer=null;
+let chartReady=false;
+
 function n(v){const x=Number(v);return Number.isFinite(x)?x:0}
 function fmt(v,d=4){if(!Number.isFinite(v))return '—';return new Intl.NumberFormat('en-US',{maximumFractionDigits:d}).format(v)}
 function pct(v){return Number.isFinite(v)?fmt(v,4)+'%':'—'}
 function feeRate(type){return (n($(type==='taker'?'takerFee':'makerFee').value)||0)/100}
 function activeFee(id){return feeRate($(id).value)}
 function saveFav(){localStorage.setItem('lbank_favorites',JSON.stringify([...state.favorites]))}
-function renderTF(){ $('tfs').innerHTML=TF.map(x=>`<button class="${x===state.tf?'active':''}" data-tf="${x}">${x==='60'?'1h':x==='240'?'4h':x==='480'?'8h':x==='720'?'12h':x==='D'?'1D':x+'m'}</button>`).join('');document.querySelectorAll('[data-tf]').forEach(b=>b.onclick=()=>{state.tf=b.dataset.tf;renderTF();loadChart()}) }
+
+function renderTF(){
+  $('tfs').innerHTML=TF.map(x=>`<button class="${x===state.tf?'active':''}" data-tf="${x}">${x==='60'?'1h':x==='240'?'4h':x==='480'?'8h':x==='720'?'12h':x==='D'?'1D':x+'m'}</button>`).join('');
+
+  document.querySelectorAll('[data-tf]').forEach(b=>b.onclick=()=>{
+    state.tf=b.dataset.tf;
+    renderTF();
+    loadChart();
+  });
+}
+
+/* =========================
+   TradingView Chart
+   ========================= */
+
 function loadChart(){
- $('chartSymbol').textContent='LBANK:'+state.symbol+'.P';
- if(!window.TradingView)return;
- $('tvChart').innerHTML='';
-function loadChart(){
+
   $('chartSymbol').textContent='LBANK:'+state.symbol+'.P';
 
-  if(!window.TradingView){
-    setTimeout(loadChart,1000);
+  if(chartRetryTimer){
+    clearTimeout(chartRetryTimer);
+    chartRetryTimer=null;
+  }
+
+  chartReady=false;
+
+  function tryLoadChart(){
+
+    if(chartReady){
+      return;
+    }
+
+    if(!window.TradingView){
+      console.log('TradingView هنوز آماده نیست؛ ۲ ثانیه بعد دوباره تلاش می‌کنیم.');
+      chartRetryTimer=setTimeout(tryLoadChart,2000);
+      return;
+    }
+
+    $('tvChart').innerHTML='';
+
+    try{
+
+      state.chart=new TradingView.widget({
+
+        container_id:'tvChart',
+
+        autosize:true,
+
+        symbol:'LBANK:'+state.symbol+'.P',
+
+        interval:state.tf,
+
+        timezone:'Etc/UTC',
+
+        theme:'dark',
+
+        style:'1',
+
+        locale:'en',
+
+        toolbar_bg:'#0b1120',
+
+        enable_publishing:false,
+
+        hide_top_toolbar:false,
+
+        hide_side_toolbar:false,
+
+        allow_symbol_change:false,
+
+        save_image:true,
+
+        withdateranges:true,
+
+        details:false,
+
+        hotlist:false,
+
+        calendar:false,
+
+        studies:['Volume@tv-basicstudies'],
+
+        support_host:'https://www.tradingview.com',
+
+        onChartReady:function(){
+
+          chartReady=true;
+
+          if(chartRetryTimer){
+            clearTimeout(chartRetryTimer);
+            chartRetryTimer=null;
+          }
+
+          console.log('TradingView با موفقیت لود شد.');
+        }
+
+      });
+
+      /*
+        اگر TradingView تا ۲ ثانیه آماده نشد،
+        دوباره تلاش می‌کنیم.
+      */
+      chartRetryTimer=setTimeout(()=>{
+
+        if(!chartReady){
+
+          console.log('TradingView هنوز آماده نشده؛ تلاش مجدد...');
+
+          try{
+            if(state.chart && typeof state.chart.remove==='function'){
+              state.chart.remove();
+            }
+          }catch(e){}
+
+          state.chart=null;
+
+          tryLoadChart();
+        }
+
+      },2000);
+
+    }catch(e){
+
+      console.warn('TradingView load failed, retrying...',e);
+
+      chartRetryTimer=setTimeout(tryLoadChart,2000);
+    }
+  }
+
+  tryLoadChart();
+}
+
+/* =========================
+   Markets
+   ========================= */
+
+async function loadMarkets(){
+
+  $('status').textContent='در حال دریافت قیمت‌ها...';
+
+  try{
+
+    const r=await fetch('/api/markets',{cache:'no-store'});
+
+    if(!r.ok)throw Error('API '+r.status);
+
+    const data=await r.json();
+
+    state.markets=Array.isArray(data)?data:(data.data||[]);
+
+    renderMarkets();
+
+    $('status').textContent='● آنلاین';
+    $('status').className='small ok';
+
+  }catch(e){
+
+    $('status').textContent='API خطا';
+    $('status').className='small bad';
+
+    $('liveNote').textContent='دریافت قیمت زنده انجام نشد. اگر لوکال اجرا می‌کنی، /api/markets باید توسط Vercel اجرا شود.';
+
+    renderMarkets();
+  }
+}
+
+function renderMarkets(){
+
+  const q=$('search').value.trim().toUpperCase();
+
+  let arr=state.markets.filter(m=>{
+
+    const s=String(m.symbol||m.symbolName||'').toUpperCase();
+
+    return (!q||s.includes(q))&&(!state.favOnly||state.favorites.has(s));
+
+  });
+
+  arr.sort((a,b)=>{
+
+    const sa=String(a.symbol||a.symbolName||'').toUpperCase();
+    const sb=String(b.symbol||b.symbolName||'').toUpperCase();
+
+    return (state.favorites.has(sb)-state.favorites.has(sa))||sa.localeCompare(sb);
+
+  });
+
+  $('markets').innerHTML=arr.slice(0,200).map(m=>{
+
+    const s=String(m.symbol||m.symbolName||'').toUpperCase();
+
+    const p=n(m.lastPrice||m.markedPrice||m.price);
+
+    return `<div class="market ${s===state.symbol?'active':''}" data-symbol="${s}">
+      <span class="star ${state.favorites.has(s)?'on':''}" data-star="${s}">★</span>
+      <div class="name">${s}</div>
+      <div class="price">${fmt(p,8)}</div>
+    </div>`;
+
+  }).join('')||'<div class="muted small">موردی پیدا نشد.</div>';
+
+  document.querySelectorAll('.market').forEach(el=>el.onclick=e=>{
+
+    if(e.target.dataset.star)return;
+
+    selectSymbol(el.dataset.symbol);
+
+  });
+
+  document.querySelectorAll('[data-star]').forEach(el=>el.onclick=e=>{
+
+    e.stopPropagation();
+
+    const s=el.dataset.star;
+
+    state.favorites.has(s)
+      ?state.favorites.delete(s)
+      :state.favorites.add(s);
+
+    saveFav();
+
+    renderMarkets();
+
+  });
+
+  const m=state.markets.find(x=>String(x.symbol||x.symbolName||'').toUpperCase()===state.symbol);
+
+  if(m){
+
+    $('liveNote').textContent=
+      `${state.symbol} • Last: ${fmt(n(m.lastPrice||m.markedPrice),8)} • Mark: ${fmt(n(m.markedPrice||m.lastPrice),8)}`;
+
+  }
+}
+
+function selectSymbol(s){
+
+  state.symbol=s;
+
+  $('symbol').value=s;
+
+  const m=state.markets.find(x=>String(x.symbol||x.symbolName||'').toUpperCase()===s);
+
+  const p=n(m?.lastPrice||m?.markedPrice);
+
+  $('entry').value=p||'';
+
+  $('tp').value='';
+  $('sl').value='';
+
+  renderMarkets();
+
+  loadChart();
+
+  calculate();
+}
+
+/* =========================
+   Position
+   ========================= */
+
+function getPosition(){
+
+  const bal=n($('balance').value),
+        riskPct=n($('riskPct').value),
+        maxRisk=n($('riskDollar').value),
+        entry=n($('entry').value),
+        sl=n($('sl').value),
+        lev=Math.max(n($('leverage').value),1),
+        er=activeFee('entryType'),
+        xr=activeFee('exitType');
+
+  if(!entry||!sl||entry<=0)
+    return {position:0,bal,risk:0,lev,er,xr};
+
+  const risk=maxRisk>0?maxRisk:bal*riskPct/100;
+
+  const distance=Math.abs(entry-sl);
+
+  const effectiveRiskPerUnit=
+    state.direction==='long'
+      ?Math.max(entry-sl,0)
+      :Math.max(sl-entry,0);
+
+  const position=
+    effectiveRiskPerUnit>0
+      ?risk*entry/effectiveRiskPerUnit
+      :0;
+
+  return {position,bal,risk,lev,er,xr};
+}
+
+/* =========================
+   Calculator
+   ========================= */
+
+function calculate(){
+
+  const entry=n($('entry').value),
+        tp=n($('tp').value),
+        sl=n($('sl').value),
+        lev=Math.max(n($('leverage').value),1),
+        bal=n($('balance').value),
+        riskPct=n($('riskPct').value),
+        manualRisk=n($('riskDollar').value),
+        marginManual=n($('marginInput').value),
+        er=activeFee('entryType'),
+        xr=activeFee('exitType');
+
+  $('entryRate').textContent=pct(er*100);
+  $('exitRate').textContent=pct(xr*100);
+
+  if(!entry||!sl||entry<=0){
+
+    $('message').textContent=
+      'Entry و SL را وارد کن تا دقیقاً مشخص شود برای ریسک دلاری انتخابی چه Position Size لازم است.';
+
     return;
   }
 
-  $('tvChart').innerHTML='';
+  const targetRisk=manualRisk>0
+    ?manualRisk
+    :bal*riskPct/100;
 
-  try{
-    state.chart=new TradingView.widget({
-      container_id:'tvChart',
-      autosize:true,
-      symbol:'LBANK:'+state.symbol+'.P',
-      interval:state.tf,
-      timezone:'Etc/UTC',
-      theme:'dark',
-      style:'1',
-      locale:'en',
-      toolbar_bg:'#0b1120',
-      enable_publishing:false,
-      hide_top_toolbar:false,
-      hide_side_toolbar:false,
-      allow_symbol_change:false,
-      save_image:true,
-      withdateranges:true,
-      details:false,
-      hotlist:false,
-      calendar:false,
-      studies:['Volume@tv-basicstudies'],
-      support_host:'https://www.tradingview.com'
-    });
-  }catch(e){
-    console.warn('TradingView load failed, retrying...',e);
+  const slMove=
+    state.direction==='long'
+      ?entry-sl
+      :sl-entry;
 
-    setTimeout(()=>{
-      loadChart();
-    },1500);
+  if(slMove<=0){
+
+    $('message').textContent=
+      'برای این جهت معامله، SL باید در سمت درست Entry باشد.';
+
+    return;
+  }
+
+  let pos;
+
+  if(marginManual>0){
+
+    pos=marginManual*lev;
+
+  }else{
+
+    const riskPerQty=
+      slMove+
+      entry*er+
+      sl*xr;
+
+    pos=
+      targetRisk*entry/riskPerQty;
+  }
+
+  const qty=pos/entry,
+        margin=pos/lev;
+
+  const tpD=
+    state.direction==='long'
+      ?tp-entry
+      :entry-tp;
+
+  const slD=slMove;
+
+  const rr=
+    slD>0&&tpD>0
+      ?tpD/slD
+      :NaN;
+
+  const tpExitNotional=
+    tp>0
+      ?qty*tp
+      :NaN;
+
+  const slExitNotional=qty*sl;
+
+  const entryFee=pos*er;
+
+  const tpGross=
+    tp>0
+      ?(
+        state.direction==='long'
+          ?qty*(tp-entry)
+          :qty*(entry-tp)
+       )
+      :NaN;
+
+  const slGross=qty*slD;
+
+  const tpExitFee=
+    Number.isFinite(tpExitNotional)
+      ?tpExitNotional*xr
+      :NaN;
+
+  const slExitFee=slExitNotional*xr;
+
+  const tpNet=
+    tpGross-entryFee-tpExitFee;
+
+  const slNet=
+    -(slGross+entryFee+slExitFee);
+
+  const be=
+    state.direction==='long'
+      ?entry*(1+er)/(1-xr)
+      :entry*(1-er)/(1+xr);
+
+  const beExit=qty*be;
+
+  const beTotalFee=
+    entryFee+beExit*xr;
+
+  const actualRisk=Math.abs(slNet);
+
+  const actualRiskPct=
+    bal
+      ?actualRisk/bal*100
+      :NaN;
+
+  $('position').textContent=fmt(pos,4)+' USDT';
+
+  $('margin').textContent=fmt(margin,4)+' USDT';
+
+  $('qty').textContent=fmt(qty,8);
+
+  $('tpDist').textContent=
+    Number.isFinite(tpD)
+      ?fmt(tpD,8)
+      :'—';
+
+  $('slDist').textContent=fmt(slD,8);
+
+  $('rr').textContent=
+    Number.isFinite(rr)
+      ?'1 : '+fmt(rr,2)
+      :'—';
+
+  $('riskPosition').textContent=
+    fmt(pos,4)+' USDT';
+
+  $('riskAmount').textContent=
+    fmt(actualRisk,4)+' USDT';
+
+  $('riskAmountPct').textContent=
+    pct(actualRiskPct);
+
+  $('tpGross').textContent=
+    Number.isFinite(tpGross)
+      ?fmt(tpGross,4)+' USDT'
+      :'—';
+
+  $('tpEntryFee').textContent=
+    fmt(entryFee,4)+' USDT';
+
+  $('tpExitFee').textContent=
+    Number.isFinite(tpExitFee)
+      ?fmt(tpExitFee,4)+' USDT'
+      :'—';
+
+  $('tpNet').textContent=
+    Number.isFinite(tpNet)
+      ?fmt(tpNet,4)+' USDT'
+      :'—';
+
+  $('tpROI').textContent=
+    Number.isFinite(tpNet)&&margin
+      ?fmt(tpNet/margin*100,2)+'%'
+      :'—';
+
+  $('slGross').textContent=
+    fmt(slGross,4)+' USDT';
+
+  $('slEntryFee').textContent=
+    fmt(entryFee,4)+' USDT';
+
+  $('slExitFee').textContent=
+    fmt(slExitFee,4)+' USDT';
+
+  $('slNet').textContent=
+    fmt(slNet,4)+' USDT';
+
+  $('slROI').textContent=
+    margin
+      ?fmt(slNet/margin*100,2)+'%'
+      :'—';
+
+  $('bePrice').textContent=
+    fmt(be,8);
+
+  $('quickBE').textContent=
+    fmt(be,8);
+
+  $('beFee').textContent=
+    fmt(beTotalFee,4)+' USDT';
+
+  const feeText=
+    fmt(entryFee+slExitFee,4);
+
+  if(marginManual>0){
+
+    $('message').innerHTML=
+      state.direction==='long'
+        ?`با Margin دستی، Position Size برابر <b>${fmt(pos,4)} USDT</b> است؛ اگر SL روی <b>${fmt(sl,8)}</b> بخورد، ضرر واقعی با کارمزد حدود <b class="bad">${fmt(actualRisk,4)} USDT</b> می‌شود.`
+        :`با Margin دستی، Position Size برابر <b>${fmt(pos,4)} USDT</b> است؛ اگر SL روی <b>${fmt(sl,8)}</b> بخورد، ضرر واقعی با کارمزد حدود <b class="bad">${fmt(actualRisk,4)} USDT</b> می‌شود.`;
+
+  }else{
+
+    $('message').innerHTML=
+      `برای اینکه اگر SL روی <b>${fmt(sl,8)}</b> بخورد، حداکثر حدود <b>${fmt(targetRisk,4)} USDT</b> ضرر کنی، Position Size باید حدود <b>${fmt(pos,4)} USDT</b> باشد. این مقدار <b>کارمزد ورود و خروج را هم داخل ریسک حساب کرده</b>؛ کارمزد کل در SL حدود ${feeText} USDT است.`;
+
   }
 }
-}
-async function loadMarkets(){
- $('status').textContent='در حال دریافت قیمت‌ها...';
- try{const r=await fetch('/api/markets',{cache:'no-store'});if(!r.ok)throw Error('API '+r.status);const data=await r.json();state.markets=Array.isArray(data)?data:(data.data||[]);renderMarkets();$('status').textContent='● آنلاین';$('status').className='small ok';
- }catch(e){$('status').textContent='API خطا';$('status').className='small bad';$('liveNote').textContent='دریافت قیمت زنده انجام نشد. اگر لوکال اجرا می‌کنی، /api/markets باید توسط Vercel اجرا شود.';renderMarkets()}
-}
-function renderMarkets(){
- const q=$('search').value.trim().toUpperCase();let arr=state.markets.filter(m=>{const s=String(m.symbol||m.symbolName||'').toUpperCase();return (!q||s.includes(q))&&(!state.favOnly||state.favorites.has(s))});
- arr.sort((a,b)=>{const sa=String(a.symbol||a.symbolName||'').toUpperCase(),sb=String(b.symbol||b.symbolName||'').toUpperCase();return (state.favorites.has(sb)-state.favorites.has(sa))||sa.localeCompare(sb)});
- $('markets').innerHTML=arr.slice(0,200).map(m=>{const s=String(m.symbol||m.symbolName||'').toUpperCase();const p=n(m.lastPrice||m.markedPrice||m.price);return `<div class="market ${s===state.symbol?'active':''}" data-symbol="${s}"><span class="star ${state.favorites.has(s)?'on':''}" data-star="${s}">★</span><div class="name">${s}</div><div class="price">${fmt(p,8)}</div></div>`}).join('')||'<div class="muted small">موردی پیدا نشد.</div>';
- document.querySelectorAll('.market').forEach(el=>el.onclick=e=>{if(e.target.dataset.star)return;selectSymbol(el.dataset.symbol)});
- document.querySelectorAll('[data-star]').forEach(el=>el.onclick=e=>{e.stopPropagation();const s=el.dataset.star;state.favorites.has(s)?state.favorites.delete(s):state.favorites.add(s);saveFav();renderMarkets()});
- const m=state.markets.find(x=>String(x.symbol||x.symbolName||'').toUpperCase()===state.symbol);if(m)$('liveNote').textContent=`${state.symbol} • Last: ${fmt(n(m.lastPrice||m.markedPrice),8)} • Mark: ${fmt(n(m.markedPrice||m.lastPrice),8)}`;
-}
-function selectSymbol(s){state.symbol=s;$('symbol').value=s;const m=state.markets.find(x=>String(x.symbol||x.symbolName||'').toUpperCase()===s);const p=n(m?.lastPrice||m?.markedPrice);$('entry').value=p||'';$('tp').value='';$('sl').value='';renderMarkets();loadChart();calculate()}
-function getPosition(){
- const bal=n($('balance').value), riskPct=n($('riskPct').value), maxRisk=n($('riskDollar').value), entry=n($('entry').value), sl=n($('sl').value), lev=Math.max(n($('leverage').value),1), er=activeFee('entryType'), xr=activeFee('exitType');
- if(!entry||!sl||entry<=0)return {position:0,bal,risk:0,lev,er,xr};
- const risk= maxRisk>0?maxRisk:bal*riskPct/100;
- const distance=Math.abs(entry-sl);const effectiveRiskPerUnit=state.direction==='long'?Math.max(entry-sl,0):Math.max(sl-entry,0);
- const position=effectiveRiskPerUnit>0?risk*entry/effectiveRiskPerUnit:0;
- return {position,bal,risk,lev,er,xr};
-}
-function calculate(){
- const entry=n($('entry').value),tp=n($('tp').value),sl=n($('sl').value),lev=Math.max(n($('leverage').value),1),bal=n($('balance').value),riskPct=n($('riskPct').value),manualRisk=n($('riskDollar').value),marginManual=n($('marginInput').value),er=activeFee('entryType'),xr=activeFee('exitType');
- $('entryRate').textContent=pct(er*100);$('exitRate').textContent=pct(xr*100);
- if(!entry||!sl||entry<=0){$('message').textContent='Entry و SL را وارد کن تا دقیقاً مشخص شود برای ریسک دلاری انتخابی چه Position Size لازم است.';return}
 
- // Target risk is the TOTAL amount allowed to be lost at SL, including entry + exit fees.
- const targetRisk=manualRisk>0?manualRisk:bal*riskPct/100;
- const slMove=state.direction==='long'?entry-sl:sl-entry;
- if(slMove<=0){$('message').textContent='برای این جهت معامله، SL باید در سمت درست Entry باشد.';return}
+/* =========================
+   Reset
+   ========================= */
 
- let pos;
- if(marginManual>0){
-   pos=marginManual*lev;
- }else{
-   // Loss at SL = qty*(price move) + entry fee + exit fee
-   // qty = position / entry
-   // Therefore position = targetRisk * entry / (SL move + entry*entryFee + SL*exitFee)
-   const riskPerQty=slMove + entry*er + sl*xr;
-   pos=targetRisk*entry/riskPerQty;
- }
-
- const qty=pos/entry,margin=pos/lev;
- const tpD=state.direction==='long'?tp-entry:entry-tp;
- const slD=slMove;
- const rr=slD>0&&tpD>0?tpD/slD:NaN;
- const tpExitNotional=tp>0?qty*tp:NaN;
- const slExitNotional=qty*sl;
- const entryFee=pos*er;
- const tpGross=tp>0?(state.direction==='long'?qty*(tp-entry):qty*(entry-tp)):NaN;
- const slGross=qty*slD;
- const tpExitFee=Number.isFinite(tpExitNotional)?tpExitNotional*xr:NaN;
- const slExitFee=slExitNotional*xr;
- const tpNet=tpGross-entryFee-tpExitFee;
- const slNet=-(slGross+entryFee+slExitFee);
- const be=state.direction==='long'?entry*(1+er)/(1-xr):entry*(1-er)/(1+xr);
- const beExit=qty*be,beTotalFee=entryFee+beExit*xr;
- const actualRisk=Math.abs(slNet),actualRiskPct=bal?actualRisk/bal*100:NaN;
-
- $('position').textContent=fmt(pos,4)+' USDT';
- $('margin').textContent=fmt(margin,4)+' USDT';
- $('qty').textContent=fmt(qty,8);
- $('tpDist').textContent=Number.isFinite(tpD)?fmt(tpD,8):'—';
- $('slDist').textContent=fmt(slD,8);
- $('rr').textContent=Number.isFinite(rr)?'1 : '+fmt(rr,2):'—';
- $('riskPosition').textContent=fmt(pos,4)+' USDT';
- $('riskAmount').textContent=fmt(actualRisk,4)+' USDT';
- $('riskAmountPct').textContent=pct(actualRiskPct);
-
- $('tpGross').textContent=Number.isFinite(tpGross)?fmt(tpGross,4)+' USDT':'—';
- $('tpEntryFee').textContent=fmt(entryFee,4)+' USDT';
- $('tpExitFee').textContent=Number.isFinite(tpExitFee)?fmt(tpExitFee,4)+' USDT':'—';
- $('tpNet').textContent=Number.isFinite(tpNet)?fmt(tpNet,4)+' USDT':'—';
- $('tpROI').textContent=Number.isFinite(tpNet)&&margin?fmt(tpNet/margin*100,2)+'%':'—';
-
- $('slGross').textContent=fmt(slGross,4)+' USDT';
- $('slEntryFee').textContent=fmt(entryFee,4)+' USDT';
- $('slExitFee').textContent=fmt(slExitFee,4)+' USDT';
- $('slNet').textContent=fmt(slNet,4)+' USDT';
- $('slROI').textContent=margin?fmt(slNet/margin*100,2)+'%':'—';
-
- $('bePrice').textContent=fmt(be,8);
- $('quickBE').textContent=fmt(be,8);
- $('beFee').textContent=fmt(beTotalFee,4)+' USDT';
-
- const feeText=fmt(entryFee+slExitFee,4);
- if(marginManual>0){
-   $('message').innerHTML=state.direction==='long'
-    ?`با Margin دستی، Position Size برابر <b>${fmt(pos,4)} USDT</b> است؛ اگر SL روی <b>${fmt(sl,8)}</b> بخورد، ضرر واقعی با کارمزد حدود <b class="bad">${fmt(actualRisk,4)} USDT</b> می‌شود.`
-    :`با Margin دستی، Position Size برابر <b>${fmt(pos,4)} USDT</b> است؛ اگر SL روی <b>${fmt(sl,8)}</b> بخورد، ضرر واقعی با کارمزد حدود <b class="bad">${fmt(actualRisk,4)} USDT</b> می‌شود.`;
- }else{
-   $('message').innerHTML=`برای اینکه اگر SL روی <b>${fmt(sl,8)}</b> بخورد، حداکثر حدود <b>${fmt(targetRisk,4)} USDT</b> ضرر کنی، Position Size باید حدود <b>${fmt(pos,4)} USDT</b> باشد. این مقدار <b>کارمزد ورود و خروج را هم داخل ریسک حساب کرده</b>؛ کارمزد کل در SL حدود ${feeText} USDT است.`;
- }
-}
 function reset(){
+
   ['entry','tp','sl','riskDollar','marginInput'].forEach(id=>{
     $(id).value='';
   });
@@ -272,13 +654,114 @@ function reset(){
 
   $('message').textContent='Entry، TP و SL را وارد کن.';
 }
-function setDirection(d){state.direction=d;$('longBtn').className=d==='long'?'selected-long':'';$('shortBtn').className=d==='short'?'selected-short':'';calculate()}
-$('search').oninput=renderMarkets;$('refresh').onclick=loadMarkets;$('favOnly').onclick=()=>{state.favOnly=!state.favOnly;$('favOnly').className=state.favOnly?'yellow':'';renderMarkets()};$('calc').onclick=calculate;$('reset').onclick=reset;$('longBtn').onclick=()=>setDirection('long');$('shortBtn').onclick=()=>setDirection('short');$('symbol').onchange=()=>selectSymbol($('symbol').value.trim().toUpperCase());
-['balance','entry','tp','sl','leverage','riskPct','riskDollar','marginInput','takerFee','makerFee','entryType','exitType'].forEach(id=>$(id).addEventListener('input',calculate));
-$('fullscreen').onclick=()=>{const el=$('chartBox');if(document.fullscreenElement)document.exitFullscreen();else el.requestFullscreen?.()};
-window.addEventListener('pageshow',()=>{ $('entry').value='';$('tp').value='';$('sl').value=''; });
-renderTF();loadMarkets();
-setTimeout(()=>{if(state.markets.length===0){$('entry').value=''}},500);
+
+/* =========================
+   Direction
+   ========================= */
+
+function setDirection(d){
+
+  state.direction=d;
+
+  $('longBtn').className=
+    d==='long'
+      ?'selected-long'
+      :'';
+
+  $('shortBtn').className=
+    d==='short'
+      ?'selected-short'
+      :'';
+
+  calculate();
+}
+
+/* =========================
+   Events
+   ========================= */
+
+$('search').oninput=renderMarkets;
+
+$('refresh').onclick=loadMarkets;
+
+$('favOnly').onclick=()=>{
+
+  state.favOnly=!state.favOnly;
+
+  $('favOnly').className=
+    state.favOnly
+      ?'yellow'
+      :'';
+
+  renderMarkets();
+};
+
+$('calc').onclick=calculate;
+
+$('reset').onclick=reset;
+
+$('longBtn').onclick=()=>setDirection('long');
+
+$('shortBtn').onclick=()=>setDirection('short');
+
+$('symbol').onchange=()=>
+  selectSymbol(
+    $('symbol').value.trim().toUpperCase()
+  );
+
+[
+  'balance',
+  'entry',
+  'tp',
+  'sl',
+  'leverage',
+  'riskPct',
+  'riskDollar',
+  'marginInput',
+  'takerFee',
+  'makerFee',
+  'entryType',
+  'exitType'
+].forEach(id=>
+  $(id).addEventListener('input',calculate)
+);
+
+$('fullscreen').onclick=()=>{
+
+  const el=$('chartBox');
+
+  if(document.fullscreenElement)
+    document.exitFullscreen();
+  else
+    el.requestFullscreen?.();
+
+};
+
+window.addEventListener('pageshow',()=>{
+
+  $('entry').value='';
+  $('tp').value='';
+  $('sl').value='';
+
+});
+
+renderTF();
+
+loadMarkets();
+
+/*
+  شروع اولیه چارت
+*/
+loadChart();
+
+setTimeout(()=>{
+
+  if(state.markets.length===0){
+    $('entry').value='';
+  }
+
+},500);
+
 </script>
 </body>
 </html>
