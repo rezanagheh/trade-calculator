@@ -1,10 +1,13 @@
-LBank Trading Calculator Pro v5 - Vercel
+LBank Futures Calculator v7
 
-Improvements:
-- TradingView Futures chart with side/top toolbar enabled
-- Fullscreen chart button
-- Open TradingView button
-- More organized calculator with risk-size highlights and reset
-- All previous Futures search/favorites/live market features retained
+Features:
+- Simple compact risk-first calculator
+- All LBank USDT perpetual contracts via API
+- Live price / mark / funding
+- Favorites saved in browser
+- TradingView Futures chart
+- Chart fullscreen + direct full TradingView tools link
+- Entry, SL, TP, Risk %, Risk $, leverage and R:R
+- Position size, margin, quantity, TP/SL net PnL, fees, R:R, break-even
 
-Deploy by pushing the folder contents to GitHub and importing the repo into Vercel.
+Deploy to Vercel from the connected GitHub repository.
