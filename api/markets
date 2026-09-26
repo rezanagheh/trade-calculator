@@ -3,73 +3,60 @@ from urllib.request import Request, urlopen
 import json
 
 
-LBANK_URL = (
-    "https://lbkperp.lbank.com/"
-    "cfd/openApi/v1/pub/marketData?productGroup=SwapU"
-)
+URL = "https://lbkperp.lbank.com/cfd/openApi/v1/pub/marketData?productGroup=SwapU"
 
 
 class handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
+
         try:
-            request = Request(
-                LBANK_URL,
+            req = Request(
+                URL,
                 headers={
                     "User-Agent": "Mozilla/5.0",
-                    "Accept": "application/json",
+                    "Accept": "application/json"
                 }
             )
 
-            with urlopen(request, timeout=15) as response:
-                raw_body = response.read()
+            response = urlopen(req, timeout=15)
+            data = json.loads(response.read().decode("utf-8"))
 
-            data = json.loads(raw_body.decode("utf-8"))
+            markets = data.get("data", [])
 
-            # LBank response can have different nesting
-            raw = data.get("data", data)
-
-            if isinstance(raw, dict):
-                raw = (
-                    raw.get("list")
-                    or raw.get("data")
-                    or raw.get("rows")
+            if isinstance(markets, dict):
+                markets = (
+                    markets.get("list")
+                    or markets.get("data")
                     or []
                 )
 
-            if not isinstance(raw, list):
-                raw = []
+            result = []
 
-            markets = []
+            for item in markets:
 
-            for item in raw:
                 if not isinstance(item, dict):
                     continue
 
-                symbol = (
+                symbol = str(
                     item.get("symbol")
                     or item.get("symbolName")
                     or ""
-                )
-
-                symbol = str(symbol).upper().strip()
+                ).upper()
 
                 if not symbol:
                     continue
 
-                last_price = (
-                    item.get("lastPrice")
-                    or item.get("price")
-                    or item.get("close")
-                )
-
-                marked_price = item.get("markedPrice")
-
-                markets.append({
+                result.append({
                     "symbol": symbol,
-                    "lastPrice": last_price,
-                    "markedPrice": marked_price
+                    "lastPrice": item.get("lastPrice"),
+                    "markedPrice": item.get("markedPrice")
                 })
+
+            body = json.dumps(
+                result,
+                ensure_ascii=False
+            ).encode("utf-8")
 
             self.send_response(200)
 
@@ -79,36 +66,25 @@ class handler(BaseHTTPRequestHandler):
             )
 
             self.send_header(
-                "Cache-Control",
-                "no-store, no-cache, must-revalidate"
-            )
-
-            self.send_header(
                 "Access-Control-Allow-Origin",
                 "*"
             )
 
             self.end_headers()
 
-            self.wfile.write(
-                json.dumps(
-                    markets,
-                    ensure_ascii=False
-                ).encode("utf-8")
-            )
+            self.wfile.write(body)
 
-        except Exception as error:
+        except Exception as e:
 
-            payload = {
-                "error": str(error),
-                "markets": []
-            }
+            body = json.dumps({
+                "error": str(e)
+            }).encode("utf-8")
 
             self.send_response(500)
 
             self.send_header(
                 "Content-Type",
-                "application/json; charset=utf-8"
+                "application/json"
             )
 
             self.send_header(
@@ -118,9 +94,4 @@ class handler(BaseHTTPRequestHandler):
 
             self.end_headers()
 
-            self.wfile.write(
-                json.dumps(
-                    payload,
-                    ensure_ascii=False
-                ).encode("utf-8")
-            )
+            self.wfile.write(body)
