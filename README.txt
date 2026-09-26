@@ -1,19 +1,10 @@
-LBank Trading Calculator Pro - Vercel
+LBank Trading Calculator Pro v5 - Vercel
 
-Files:
-- index.html        Frontend
-- api/index.py      LBank Futures API proxy
-- requirements.txt  Python dependency
-- vercel.json       Vercel routing
+Improvements:
+- TradingView Futures chart with side/top toolbar enabled
+- Fullscreen chart button
+- Open TradingView button
+- More organized calculator with risk-size highlights and reset
+- All previous Futures search/favorites/live market features retained
 
-Deploy:
-1) Upload this folder to a GitHub repository.
-2) In Vercel choose Add New -> Project.
-3) Import the GitHub repository.
-4) Deploy with the default settings.
-
-After deployment open the Vercel URL on PC or phone.
-
-Favorites are stored in the browser's localStorage, so they persist on that browser/device.
-
-Note: The chart is the TradingView embed used by the current project. LBank Futures market data comes through the Python proxy.
+Deploy by pushing the folder contents to GitHub and importing the repo into Vercel.
